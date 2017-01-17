@@ -1,0 +1,25 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <group android:id="@+id/main_menu_group">
+
+        <item
+            android:id="@+id/refresh"
+            android:icon="@drawable/ic_cached_white_48dp"
+            android:title="@string/refresh"
+            app:showAsAction="ifRoom" />
+        <item
+            android:id="@+id/request_desktop"
+            android:checkable="true"
+            android:title="@string/request_desktop_version"
+            android:visible="true"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/take_screenshot"
+            android:title="Take a screenshot"
+            android:visible="true"
+            app:showAsAction="never" />
+    </group>
+
+</menu>

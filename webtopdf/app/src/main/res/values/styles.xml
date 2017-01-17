@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MyTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- colorPrimary is used for the default action bar background -->
+        <item name="colorPrimary">#009688</item>
+
+        <!-- colorPrimaryDark is used for the status bar -->
+        <item name="colorPrimaryDark">#00796B</item>
+
+        <!-- colorAccent is used as the default value for colorControlActivated
+             which is used to tint widgets -->
+        <item name="colorAccent">#FFC107</item>
+
+        <item name="android:editTextColor">#FFFFFF</item>
+
+        <item name="colorControlNormal">#FFFFFF</item>
+
+        <item name="android:textColorSecondary">#FFFFFF</item>
+
+        <item name="android:textColorPrimary">#FFFFFF</item>
+
+        <item name="actionBarStyle">@style/MyActionBar</item>
+
+        <item name="android:textColorHighlight">#FFC107</item>
+
+        <!-- You can also set colorControlNormal, colorControlActivated
+             colorControlHighlight & colorSwitchThumbNormal. -->
+    </style>
+    <style name="MyActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
+
+        <item name="colorPrimaryDark">#1976D2</item>
+        <item name="background">@color/actionBar</item>
+        <item name="android:textColorSecondary">#FFFFFF</item>
+
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:editTextColor">#FFFFFF</item>
+
+    </style>
+
+    <style name="FilePickerTheme" parent="NNF_BaseTheme">
+        <item name="colorPrimary">#009688</item>
+
+        <!-- colorPrimaryDark is used for the status bar -->
+        <item name="colorPrimaryDark">#00796B</item>
+
+        <!-- colorAccent is used as the default value for colorControlActivated
+             which is used to tint widgets -->
+        <item name="colorAccent">#FFC107</item>
+    </style>
+
+    <style name="FilePickerAlertDialogTheme" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="colorPrimary">#009688</item>
+
+        <!-- colorPrimaryDark is used for the status bar -->
+        <item name="colorPrimaryDark">#00796B</item>
+
+        <!-- colorAccent is used as the default value for colorControlActivated
+             which is used to tint widgets -->
+        <item name="colorAccent">#FFC107</item>
+    </style>
+
+</resources>
