@@ -8,8 +8,8 @@ android {
         applicationId "web.dassem.webtopdf"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 27
-        versionName "1.027"
+        versionCode 1
+        versionName "1.000"
     }
     buildTypes {
         release {

@@ -185,47 +185,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void saveFile(final Uri uri) {
         showProgressDialog();
-        /*
-        try {
-            Document document = new Document();
-            File file = new File(uri.getPath() + "/" + "site" + ".pdf");
-            file.createNewFile();
-            PdfWriter.getInstance(document, new FileOutputStream(file));
-            document.open();
-            if (currentBitmap.getHeight() > 14400) {
-                Bitmap bm1 = Bitmap.createBitmap(currentBitmap, 0, 0, currentBitmap.getWidth(), (currentBitmap.getHeight() / 2));
-                Bitmap bm2 = Bitmap.createBitmap(currentBitmap, 0, (currentBitmap.getHeight() / 2), currentBitmap.getWidth(), (currentBitmap.getHeight() / 2));
-                com.itextpdf.text.Image image = getItextImage(bm1);
-                document.setPageSize(image);
-                currentBitmap.recycle();
-                document.newPage();
-                image.setAbsolutePosition(0, 0);
-                document.add(image);
-
-                document.newPage();
-                image.setAbsolutePosition(0, 0);
-                document.add(getItextImage(bm2));
-
-                bm1.recycle();
-                bm2.recycle();
-
-
-            } else {
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                com.itextpdf.text.Image image = com.itextpdf.text.Image.getInstance(stream.toByteArray());
-                document.setPageSize(image);
-                currentBitmap.recycle();
-                document.newPage();
-                image.setAbsolutePosition(0, 0);
-                document.add(image);
-            }
-            document.close();
-            Toast.makeText(this, "File sucessfully saved in " + uri.getPath(), Toast.LENGTH_SHORT).show();
-
-        } catch (DocumentException | IOException e) {
-            e.printStackTrace();
-        }*/
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(final Void... params) {
@@ -289,7 +248,12 @@ public class MainActivity extends AppCompatActivity {
             protected void onPreExecute() {
                 if (progressDialog != null) {
                     if (!progressDialog.isShowing()) {
-                        progressDialog.show();
+                        mainActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialog.show();
+                            }
+                        });
                     }
                 }
             }
