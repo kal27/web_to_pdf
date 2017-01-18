@@ -1,18 +1,21 @@
 package web.dassem.webtopdf;
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
@@ -24,15 +27,17 @@ import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.Image;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.nononsenseapps.filepicker.FilePickerActivity;
 
@@ -58,13 +63,14 @@ public class MainActivity extends AppCompatActivity {
     private final int FILE_CODE = 1337;
     private final int DIR_CODE = 1339;
     private Bitmap currentBitmap;
+    private ProgressDialog progressDialog;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= 21) {
-            myWebView.enableSlowWholeDocumentDraw();
+            WebView.enableSlowWholeDocumentDraw();
         }
         setContentView(R.layout.activity_main);
         initialize();
@@ -103,29 +109,37 @@ public class MainActivity extends AppCompatActivity {
         actionBar.setCustomView(R.layout.action_bar_view);
         getWebPageAddress = (EditText) actionBar.getCustomView().findViewById(
                 R.id.searchfield);
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                11);
 
         actionBar.setDisplayOptions(android.support.v7.app.ActionBar.DISPLAY_SHOW_CUSTOM | android.support.v7.app.ActionBar.DISPLAY_SHOW_HOME);
     }
 
     private void extractBitmap() {
-        myWebView.measure(View.MeasureSpec.makeMeasureSpec(
-                View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        myWebView.layout(0, 0, myWebView.getMeasuredWidth(),
-                myWebView.getMeasuredHeight());
-        myWebView.setDrawingCacheEnabled(true);
-        myWebView.buildDrawingCache();
-        currentBitmap = Bitmap.createBitmap(myWebView.getMeasuredWidth(),
-                myWebView.getMeasuredHeight(), Bitmap.Config.RGB_565);
-
-        Canvas canvas = new Canvas(currentBitmap);
-        myWebView.draw(canvas);
-
-
         startChooseFileIntent(true);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                myWebView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        myWebView.measure(View.MeasureSpec.makeMeasureSpec(
+                                View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED),
+                                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+
+                        myWebView.layout(0, 0, myWebView.getMeasuredWidth(),
+                                myWebView.getMeasuredHeight());
+
+                        myWebView.setDrawingCacheEnabled(true);
+                        myWebView.buildDrawingCache();
+                        currentBitmap = Bitmap.createBitmap(myWebView.getMeasuredWidth(),
+                                myWebView.getMeasuredHeight(), Bitmap.Config.RGB_565);
+
+                        Canvas canvas = new Canvas(currentBitmap);
+                        myWebView.draw(canvas);
+                    }
+                });
+            }
+        }).start();
+
 
     }
 
@@ -169,31 +183,163 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void saveFile(Uri uri) {
+    private void saveFile(final Uri uri) {
+        showProgressDialog();
+        /*
         try {
             Document document = new Document();
             File file = new File(uri.getPath() + "/" + "site" + ".pdf");
             file.createNewFile();
             PdfWriter.getInstance(document, new FileOutputStream(file));
             document.open();
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            com.itextpdf.text.Image image = com.itextpdf.text.Image.getInstance(stream.toByteArray());
-            currentBitmap.recycle();
             if (currentBitmap.getHeight() > 14400) {
-                document.setPageSize(new Rectangle(currentBitmap.getWidth(), 14400));
-            } else {
+                Bitmap bm1 = Bitmap.createBitmap(currentBitmap, 0, 0, currentBitmap.getWidth(), (currentBitmap.getHeight() / 2));
+                Bitmap bm2 = Bitmap.createBitmap(currentBitmap, 0, (currentBitmap.getHeight() / 2), currentBitmap.getWidth(), (currentBitmap.getHeight() / 2));
+                com.itextpdf.text.Image image = getItextImage(bm1);
                 document.setPageSize(image);
+                currentBitmap.recycle();
+                document.newPage();
+                image.setAbsolutePosition(0, 0);
+                document.add(image);
+
+                document.newPage();
+                image.setAbsolutePosition(0, 0);
+                document.add(getItextImage(bm2));
+
+                bm1.recycle();
+                bm2.recycle();
+
+
+            } else {
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                com.itextpdf.text.Image image = com.itextpdf.text.Image.getInstance(stream.toByteArray());
+                document.setPageSize(image);
+                currentBitmap.recycle();
+                document.newPage();
+                image.setAbsolutePosition(0, 0);
+                document.add(image);
             }
-            document.newPage();
-            image.setAbsolutePosition(0, 0);
-            document.add(image);
             document.close();
             Toast.makeText(this, "File sucessfully saved in " + uri.getPath(), Toast.LENGTH_SHORT).show();
 
         } catch (DocumentException | IOException e) {
             e.printStackTrace();
-        }
+        }*/
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(final Void... params) {
+                try {
+                    Document document = new Document();
+                    final File file = new File(uri.getPath() + "/" + "site" + ".pdf");
+                    file.createNewFile();
+                    PdfWriter.getInstance(document, new FileOutputStream(file));
+                    document.open();
+                    if (currentBitmap.getHeight() > 14400) {
+                        Bitmap bm1 = Bitmap.createBitmap(currentBitmap, 0, 0, currentBitmap.getWidth(), (currentBitmap.getHeight() / 2));
+                        Bitmap bm2 = Bitmap.createBitmap(currentBitmap, 0, (currentBitmap.getHeight() / 2), currentBitmap.getWidth(), (currentBitmap.getHeight() / 2));
+                        com.itextpdf.text.Image image = getItextImage(bm1);
+                        document.setPageSize(image);
+                        currentBitmap.recycle();
+                        document.newPage();
+                        image.setAbsolutePosition(0, 0);
+                        document.add(image);
+
+                        document.newPage();
+                        image.setAbsolutePosition(0, 0);
+                        document.add(getItextImage(bm2));
+
+                        bm1.recycle();
+                        bm2.recycle();
+
+
+                    } else {
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                        com.itextpdf.text.Image image = com.itextpdf.text.Image.getInstance(stream.toByteArray());
+                        document.setPageSize(image);
+                        currentBitmap.recycle();
+                        document.newPage();
+                        image.setAbsolutePosition(0, 0);
+                        document.add(image);
+                    }
+                    document.close();
+                    mainActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "File sucessfully saved in " + file.getPath(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                } catch (DocumentException | IOException e) {
+                    Toast.makeText(mainActivity, e.toString(), Toast.LENGTH_SHORT).show();
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(final Void result) {
+                if (progressDialog.isShowing()) {
+                    progressDialog.dismiss();
+                }
+            }
+
+            @Override
+            protected void onPreExecute() {
+                if (progressDialog != null) {
+                    if (!progressDialog.isShowing()) {
+                        progressDialog.show();
+                    }
+                }
+            }
+
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
+    }
+
+    private Image getItextImage(Bitmap bitmap) throws IOException, BadElementException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        return com.itextpdf.text.Image.getInstance(stream.toByteArray());
+    }
+
+    private void showProgressDialog() {
+        progressDialog = new ProgressDialog(MainActivity.this);
+
+        // Set progress dialog style horizontal
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+
+        // Set the progress dialog title and message
+        progressDialog.setTitle(getString(R.string.loading));
+        progressDialog.setMessage(getString(R.string.rendering));
+
+        // Set the progress dialog background color
+        progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#FFD4D9D0")));
+
+        progressDialog.setIndeterminate(true);
+                /*
+                    Set the progress dialog non cancelable
+                    It will disallow user's to cancel progress dialog by clicking outside of dialog
+                    But, user's can cancel the progress dialog by cancel button
+                 */
+        progressDialog.setCancelable(false);
+
+        progressDialog.setMax(100);
+
+        // Put a cancel button in progress dialog
+        progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+            // Set a click listener for progress dialog cancel button
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // dismiss the progress dialog
+                progressDialog.dismiss();
+
+                // Tell the system about cancellation
+            }
+        });
+
+
+        // Set the progress status zero on each button click
     }
 
 
