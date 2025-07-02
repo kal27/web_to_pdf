@@ -1,4 +1,4 @@
-# Web to PDF
+# Web to PDF app
 
 Web to PDF is an application that allows you to convert web pages to PDF format. It is covered by the AGPL license. It does.
 AGPL is a free / open source software license.
